@@ -62,6 +62,9 @@ class GameMenu(State):
         # changing while the game is running
         self.surface = Layer(GameConfig.SCREEN_SIZE)
         self.clock = pygame.time.Clock()
+
+        pygame.event.set_allowed(None)
+        pygame.event.set_allowed(pygame.KEYDOWN)
         self.controls = {
             pygame.KEYDOWN: {
                 GameConfig.UP: self.keydown_up,
@@ -70,11 +73,11 @@ class GameMenu(State):
         }
 
     def run(self):
-        for _ in range(180):
+        for _ in range(700):
             self.clock.tick(GameConfig.FRAMES_PER_SECOND)
-            for event in pygame.event.get():
-                if event.type in self.controls:
-                    self.controls[event.type].get(event.key, lambda: None)()
+            event = pygame.event.poll()
+            if event.type in self.controls:
+                self.controls[event.type].get(event.key, lambda: None)()
             self.surface.clear()
             Layer.update()
 
