@@ -1,16 +1,14 @@
 import pygame
 from gameconfig import GameConfig
 from layer import Layer
-from control import menu_events
+from control import EventControl
 
 
 class State(object):
-    '''
+    """
     Default State class. The StateHandler depends on each state having a run
-    method. If a new state does not redefine the run method, then the default
-    run method will return none and StateHandler.run_game will exit. Also,
-    contains state_vars for communicating across states.
-    '''
+    method. Contains state_vars for communicating across states.
+    """
     def __init__(self, state_vars):
         self.state_vars = state_vars
 
@@ -19,10 +17,10 @@ class State(object):
 
 
 class StateHandler(object):
-    '''
+    """
     Manages the game state, hands off arguments between game states, and
     initializes pygame.
-    '''
+    """
     def __init__(self):
         self.screen = None
         self.current_state = None
@@ -49,43 +47,51 @@ class StateHandler(object):
 class GameMenu(State):
     def __init__(self, *args, **kwargs):
         State.__init__(self, *args, **kwargs)
+        self.state_vars["MENU"] = self
+        self.surface = None
         self.clock = None
         self.controls = None
+        self.font = None
+        self.exit = False
+        self.buttons = None
         self.setup()
 
     def setup(self):
-        '''
-        Creates a screen to blit images to and a clock for this
-        instance of play.
-        '''
-        # TODO: Add support for SCREEN_SIZE and other config options
-        # changing while the game is running
         self.surface = Layer(GameConfig.SCREEN_SIZE)
+        self.surface.fill(GameConfig.MENU_COLOR)
         self.clock = pygame.time.Clock()
-
-        pygame.event.set_allowed(None)
-        pygame.event.set_allowed(pygame.KEYDOWN)
-        self.controls = {
-            pygame.KEYDOWN: {
-                GameConfig.UP: self.keydown_up,
-                GameConfig.DOWN: self.keydown_down,
-            }
-        }
+        self.controls = EventControl({
+            pygame.QUIT: self.quit,
+            pygame.MOUSEMOTION: self.mouse_movement_event
+        })
+        self.font = pygame.font.Font(None, GameConfig.MENU_FONT_SIZE)
+        self.buttons = [
+            self.font.render("Start", True, GameConfig.MENU_TEXT_COLOR),
+            self.font.render("Options", True, GameConfig.MENU_TEXT_COLOR),
+            self.font.render("Exit", True, GameConfig.MENU_TEXT_COLOR)
+        ]
 
     def run(self):
-        for _ in range(700):
+        while not self.exit:
             self.clock.tick(GameConfig.FRAMES_PER_SECOND)
-            event = pygame.event.poll()
-            if event.type in self.controls:
-                self.controls[event.type].get(event.key, lambda: None)()
-            self.surface.clear()
+            self.controls.poll_event()
+            self.draw_menu()
             Layer.update()
 
-        # Handle completed status
         return None
 
-    def keydown_up(self):
-        print 'U'
+    def draw_menu(self):
+        offset = 0
+        for button in self.buttons:
+            self.surface.blit(button, ((self.surface.get_width() - button.get_width()) / 2,
+                                       (self.surface.get_height() - button.get_height()) / 2 + offset))
+            offset += button.get_height() + GameConfig.MENU_TEXT_OFFSET
 
-    def keydown_down(self):
-        print 'D'
+    def mouse_movement_event(self, event):
+        for button in self.buttons:
+            if button.get_rect(left=self.surface.get_width() - 100).collidepoint(event.pos):
+                print button
+
+    def quit(self, event):
+        self.exit = True
+

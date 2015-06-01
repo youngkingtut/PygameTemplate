@@ -17,11 +17,11 @@ class Layer(pygame.Surface):
         cls.layers.append(layer)
 
     @classmethod
-    def pop_layer(cls, layer):
+    def remove_layer(cls, layer):
         cls.layers.remove(layer)
 
-    def __init__(self, size, position=(0, 0), *args, **kwargs):
-        pygame.Surface.__init__(self, size, *args, **kwargs)
+    def __init__(self, size, position=(0, 0)):
+        super(Layer, self).__init__(size)
         self.position = position
         self.clear()
         Layer.append_layer(self)
